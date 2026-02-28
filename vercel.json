@@ -1,5 +1,6 @@
 {
   "buildCommand": "npm install --prefix client && npm run build --prefix client",
   "outputDirectory": "client/dist",
-  "installCommand": "echo skip"
+  "installCommand": "echo skip",
+  "ignoreCommand": "git diff --name-only HEAD^ HEAD | grep -qE '^(client|shared)/' && exit 1 || exit 0"
 }

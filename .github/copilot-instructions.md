@@ -123,8 +123,8 @@ Register `room_state` listeners **before** emitting the event that triggers them
 
 ```ts
 // CORRECT
-const wordPromise = captureNextCurrentWord(client);
-client.emit('start_game');
+const wordPromise = captureNextCurrentWord(players);
+players[0].emit('start_game');
 const word = await wordPromise;
 ```
 
@@ -136,7 +136,7 @@ const word = await wordPromise;
 const { io, emitted, find, clear } = makeMockIo();
 const room = new Room('ABCD', io as any);
 // ...
-expect(find('room_state', socketId)).toBeDefined();
+expect(find('room_state', socketId).length).toBeGreaterThan(0);
 // clear(); // optionally reset between assertions
 ```
 

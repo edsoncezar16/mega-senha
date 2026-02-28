@@ -1,0 +1,23 @@
+{
+  "name": "mega-senha-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsup src/server.ts --out-dir dist --platform node --format cjs --no-splitting && cp src/game/words.txt dist/words.txt",
+    "start": "node dist/server.js",
+    "fetch-words": "tsx scripts/fetch-words.ts"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "tsup": "^8.0.1",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.2"
+  }
+}

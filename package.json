@@ -1,0 +1,28 @@
+{
+  "name": "mega-senha",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "build:server": "npm run build --workspace=server",
+    "build:client": "npm run build --workspace=client",
+    "test": "vitest run --workspace vitest.workspace.ts",
+    "test:watch": "vitest --workspace vitest.workspace.ts",
+    "test:coverage": "vitest run --workspace vitest.workspace.ts --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^1.1.0",
+    "@vitest/coverage-v8": "^1.1.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/user-event": "^14.5.2",
+    "jsdom": "^23.0.1",
+    "socket.io-client": "^4.7.2"
+  }
+}

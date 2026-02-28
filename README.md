@@ -123,6 +123,10 @@ Then deploy via the Vercel dashboard or CLI.
 
 MIT — see [LICENSE](LICENSE).
 
+## AI Assistance Diligence Statement
+
+This project was built with significant assistance from [Claude](https://claude.ai) (Anthropic). Several commits are co-authored by Claude Code, which contributed to the design, implementation, and testing of this codebase. All AI-generated code has been reviewed and accepted by the human author.
+
 ## CI / CD
 
 Path-based triggers — only the relevant jobs run per PR/push:

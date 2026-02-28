@@ -2,7 +2,7 @@
 
 ## What This Project Does
 
-Mega Senha is a real-time multiplayer word-guessing game for exactly 4 players, inspired by the Brazilian TV show *Senha*. Two teams of two take turns — one player gives single-word clues, the other guesses — over 4 rounds of 90 seconds each.
+Mega Senha is a real-time multiplayer word-guessing game designed for two teams of two (4 active players), inspired by the Brazilian TV show *Senha*. The server requires exactly 2 players per team to start a game but does not cap the total number of connected users — additional players remain without an active role. Two teams of two take turns — one player gives single-word clues, the other guesses — over 4 rounds of 90 seconds each.
 
 ## Repository Layout
 
@@ -59,19 +59,20 @@ npm run build:client         # tsc + vite build → client/dist/
 
 ## Shared Types Contract
 
-`shared/types.ts` is the **only** place that defines the network contract. **Never** copy its types into client or server — always import via the path alias `../../shared/types`. The aliases are configured in:
+`shared/types.ts` is the **only** place that defines the network contract. **Never** copy its types into client or server. In client code and jsdom-based tests, import via the path alias `../../shared/types`. That alias is configured in:
 
 - `client/tsconfig.json`
-- `server/tsconfig.json`
-- `vitest.workspace.ts`
+- the Vitest jsdom project configuration (see `vitest.workspace.ts`)
+
+On the server side, import from `shared/types.ts` using normal relative paths; there is no path alias configured in `server/tsconfig.json`.
 
 Key types to know:
 
 | Type | Purpose |
 |------|---------|
 | `GamePhase` | `WAITING_FOR_PLAYERS \| IN_ROUND \| ROUND_END \| GAME_END` |
-| `RoomState` | Full snapshot sent to every player each tick |
-| `Player` | `{ id, name, teamId, isReady }` |
+| `RoomState` | Full snapshot broadcast on discrete state changes (not every timer tick) |
+| `Player` | `{ id, name, team, isHost }` |
 | `ClientToServerEvents` | All events a browser can emit |
 | `ServerToClientEvents` | All events the server can emit |
 
@@ -129,13 +130,14 @@ const word = await wordPromise;
 
 ### Mock IO (Room Unit Tests)
 
-`makeMockIo()` returns a minimal `{ to(id).emit(event, payload) }` object that records all calls. Assert via `emitted[socketId]`:
+`makeMockIo()` returns a `{ io, emitted, find, clear }` helper for unit-testing the `Room` class. `emitted` is a flat `Emission[]` array of all calls; use the `find` and `clear` helpers:
 
 ```ts
-const { io, emitted } = makeMockIo();
+const { io, emitted, find, clear } = makeMockIo();
 const room = new Room('ABCD', io as any);
 // ...
-expect(emitted[socketId]).toContainEqual(expect.objectContaining({ event: 'room_state' }));
+expect(find('room_state', socketId)).toBeDefined();
+// clear(); // optionally reset between assertions
 ```
 
 ## Environment Variables
@@ -144,7 +146,7 @@ expect(emitted[socketId]).toContainEqual(expect.objectContaining({ event: 'room_
 |----------|------|---------|-------|
 | `PORT` | server | `3001` | HTTP listen port |
 | `CLIENT_ORIGIN` | server | `http://localhost:5173` | CORS allowed origin |
-| `VITE_SERVER_URL` | client build | `http://localhost:3001` | Only needed in production; dev uses Vite proxy |
+| `VITE_SERVER_URL` | client build | `http://localhost:3001` | WebSocket server URL used in both dev and production; if unset, the client connects to `http://localhost:3001` |
 
 ## CI / CD
 
@@ -162,5 +164,5 @@ Merges to `main` auto-deploy: server → Fly.io (`FLY_API_TOKEN` secret required
 1. **words.txt not found in production**: The build step copies `server/src/game/words.txt` to `server/dist/`. If you add other static assets to `server/src/game/`, copy them in the build script too.
 2. **Shared type changes**: Any change to `shared/types.ts` affects both sides. Run `npm run test:server` **and** `npm run test:client` when modifying it.
 3. **Socket event naming**: Event names are string literals in `types.ts` (`ClientToServerEvents`/`ServerToClientEvents`). Keep client `emit` names and server `on` names in sync — TypeScript will catch most mismatches, but only if both sides use the typed `Socket` generics.
-4. **Room code collisions**: Room codes are 4 random uppercase letters. The server checks for collisions but retries are not implemented — extremely unlikely in practice.
+4. **Room code collisions**: Room codes are 4 characters drawn from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (letters + digits, excluding ambiguous chars). The server retries in a loop until it finds an unused code, but you still shouldn't rely on collisions being impossible.
 5. **`socket.id` stability**: `socket.id` is `undefined` before `connect`. Always use the `myId` state value from `useSocket` in client components.

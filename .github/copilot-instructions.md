@@ -20,7 +20,7 @@ mega-senha/
 │       └── game/
 │           ├── Room.ts           # Game state machine
 │           ├── prefix.ts         # sharesPrefix() hint validation
-│           ├── words.ts          # dealWords(), 758-word pool
+│           ├── words.ts          # dealWords(), word pool loaded/shuffled from words.txt (filtered to length >= 4)
 │           └── words.txt         # Word list (copied to dist/ at build time)
 ├── shared/
 │   └── types.ts     # Single source of truth — ALL socket payloads, RoomState, Player, GamePhase
@@ -62,6 +62,7 @@ npm run build:client         # tsc + vite build → client/dist/
 `shared/types.ts` is the **only** place that defines the network contract. **Never** copy its types into client or server. In client code and jsdom-based tests, import via the path alias `../../shared/types`. That alias is configured in:
 
 - `client/tsconfig.json`
+- `client/vite.config.ts` (Vite needs its own alias; it does not read TS `paths` automatically)
 - the Vitest jsdom project configuration (see `vitest.workspace.ts`)
 
 On the server side, import from `shared/types.ts` using normal relative paths; there is no path alias configured in `server/tsconfig.json`.

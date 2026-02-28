@@ -9,9 +9,39 @@ on:
       - main
 
 jobs:
-  test:
-    name: Test
-    if: github.event_name == 'pull_request'
+  # ── Detect which paths changed ──────────────────────────────────────────────
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      client: ${{ steps.filter.outputs.client }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - 'shared/**'
+              - 'tests/unit/server/**'
+              - 'tests/integration/**'
+              - 'tests/e2e/**'
+            client:
+              - 'client/**'
+              - 'shared/**'
+              - 'tests/unit/client/**'
+              - 'tests/integration/**'
+              - 'tests/e2e/**'
+
+  # ── Server tests (PR only) ───────────────────────────────────────────────────
+  test-server:
+    name: Test server
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,11 +50,28 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm test
+      - run: npm run test:server
 
+  # ── Client tests (PR only) ───────────────────────────────────────────────────
+  test-client:
+    name: Test client
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:client
+
+  # ── Deploy server → Fly.io (push to main, server paths only) ────────────────
   deploy-server:
     name: Deploy server → Fly.io
-    if: github.event_name == 'push'
+    needs: changes
+    if: github.event_name == 'push' && needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -122,3 +122,16 @@ Then deploy via the Vercel dashboard or CLI.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## CI / CD
+
+Path-based triggers — only the relevant jobs run per PR/push:
+
+| Trigger | Changed paths | Action |
+|---------|---------------|--------|
+| Pull request → `main` | `server/**`, `shared/**`, `tests/unit/server/**`, `tests/integration/**`, `tests/e2e/**` | Run server tests (`test-server`) |
+| Pull request → `main` | `client/**`, `shared/**`, `tests/unit/client/**`, `tests/integration/**`, `tests/e2e/**` | Run client tests (`test-client`) |
+| Merge to `main` | `server/**`, `shared/**` | Deploy server to Fly.io |
+| Merge to `main` | `client/**`, `shared/**` | Deploy client to Vercel (via `ignoreCommand`) |
+
+Branch protection on `main` requires `test-server` and `test-client` to pass (GitHub treats skipped jobs as passing).

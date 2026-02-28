@@ -12,6 +12,8 @@
     "build:server": "npm run build --workspace=server",
     "build:client": "npm run build --workspace=client",
     "test": "vitest run --workspace vitest.workspace.ts",
+    "test:server": "vitest run --workspace vitest.workspace.ts --project node",
+    "test:client": "vitest run --workspace vitest.workspace.ts --project jsdom",
     "test:watch": "vitest --workspace vitest.workspace.ts",
     "test:coverage": "vitest run --workspace vitest.workspace.ts --coverage"
   },

@@ -25,10 +25,10 @@ mega-senha/
 ├── shared/
 │   └── types.ts     # Single source of truth — ALL socket payloads, RoomState, Player, GamePhase
 ├── tests/           # Root-level Vitest workspace (node + jsdom environments)
-│   ├── unit/server/ # prefix.test.ts (19), Room.test.ts (29)
-│   ├── unit/client/ # Timer.test.tsx (12), Home.test.tsx (13)
-│   ├── integration/ # server.test.ts (15) — real in-process Socket.io
-│   └── e2e/         # full-game.test.ts (1) — complete 4-round game
+│   ├── unit/server/ # prefix.test.ts, Room.test.ts — core server game logic tests
+│   ├── unit/client/ # Timer.test.tsx, Home.test.tsx — core client UI + timer tests
+│   ├── integration/ # server.test.ts — real in-process Socket.io integration tests
+│   └── e2e/         # full-game.test.ts — complete 4-round game end-to-end test
 ├── vitest.workspace.ts
 ├── CLAUDE.md        # Extended architecture notes (read this too)
 └── README.md
@@ -50,7 +50,7 @@ npm run test:server          # server unit + integration + e2e
 npm run test:client          # client unit tests (jsdom)
 npm run test:watch           # watch mode
 npm run test:coverage        # with coverage report
-npx vitest run <path>        # single file
+npx vitest --workspace vitest.workspace.ts run <path>   # single file
 
 # Build
 npm run build:server         # tsup → server/dist/
@@ -59,13 +59,17 @@ npm run build:client         # tsc + vite build → client/dist/
 
 ## Shared Types Contract
 
-`shared/types.ts` is the **only** place that defines the network contract. **Never** copy its types into client or server. In client code and jsdom-based tests, import via the path alias `../../shared/types`. That alias is configured in:
+`shared/types.ts` is the **only** place that defines the network contract. **Never** copy its types into client or server.
+
+In **client application code and jsdom-based tests**, import shared types from the local barrel file `client/src/types.ts` (for example, `import { RoomState } from '../types';`). That barrel file re-exports everything from `../../shared/types` and is the **only** client file that should import from `../../shared/types` directly.
+
+The `../../shared/types` alias used by `client/src/types.ts` is configured in:
 
 - `client/tsconfig.json`
 - `client/vite.config.ts` (Vite needs its own alias; it does not read TS `paths` automatically)
 - the Vitest jsdom project configuration (see `vitest.workspace.ts`)
 
-On the server side, import from `shared/types.ts` using normal relative paths; there is no path alias configured in `server/tsconfig.json`.
+On the **server** side, import from `shared/types.ts` using normal relative paths; there is no path alias configured in `server/tsconfig.json`.
 
 Key types to know:
 
@@ -116,7 +120,7 @@ room.startGame();
 vi.useFakeTimers(...);
 ```
 
-Use `{ toFake: ['setInterval', 'clearInterval'] }` (not the bare default) — faking `setTimeout` breaks Socket.io internals.
+In **integration/E2E tests that use real Socket.io clients**, use `{ toFake: ['setInterval', 'clearInterval'] }` (not the bare default) — faking `setTimeout` breaks Socket.io internals. Server **unit** tests (which use a mock IO) can safely use bare `vi.useFakeTimers()`.
 
 ### E2E Race Condition
 
@@ -151,12 +155,12 @@ expect(find('room_state', socketId).length).toBeGreaterThan(0);
 
 ## CI / CD
 
-Two required status checks on PRs (`test-server`, `test-client`); skipped jobs count as passing.
+Two GitHub Actions checks run on PRs: `Test server` and `Test client`. Each job only runs when relevant paths change:
 
 | Changed paths | Job triggered |
 |---------------|---------------|
-| `server/**`, `shared/**`, `tests/unit/server/**`, `tests/integration/**`, `tests/e2e/**` | `test-server` |
-| `client/**`, `shared/**`, `tests/unit/client/**`, `tests/integration/**`, `tests/e2e/**` | `test-client` |
+| `server/**`, `shared/**`, `tests/unit/server/**`, `tests/integration/**`, `tests/e2e/**` | `Test server` |
+| `client/**`, `shared/**`, `tests/unit/client/**`, `tests/integration/**`, `tests/e2e/**` | `Test client` |
 
 Merges to `main` auto-deploy: server → Fly.io (`FLY_API_TOKEN` secret required), client → Vercel.
 

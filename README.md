@@ -1,6 +1,6 @@
 # Mega Senha
 
-A real-time multiplayer word-guessing game for 4 players, inspired by the TV show *Senha*. Two teams of two take turns: one player gives single-word clues, the other guesses. Four rounds, 90 seconds each.
+A real-time multiplayer word-guessing game for 4 players, inspired by the TV show *Mega Senha*. Two teams of two take turns: one player gives single-word clues, the other guesses. Four rounds, 90 seconds each.
 
 ## Stack
 
